@@ -237,7 +237,7 @@ public class AMQPPublisher extends AMQPSampler implements Interruptible {
         return publishProperties;
     }
 
-    protected boolean initChannel() throws IOException, NoSuchAlgorithmException, KeyManagementException {
+    protected boolean initChannel() throws Exception {
         boolean ret = super.initChannel();
         if (getUseTx()) {
             channel.txSelect();

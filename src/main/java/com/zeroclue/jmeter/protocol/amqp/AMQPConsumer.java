@@ -312,7 +312,7 @@ public class AMQPConsumer extends AMQPSampler implements Interruptible, TestStat
         log.debug(tn + " " + tl + " " + s + " " + th);
     }
 
-    protected boolean initChannel() throws IOException, NoSuchAlgorithmException, KeyManagementException {
+    protected boolean initChannel() throws Exception {
         boolean ret = super.initChannel();
         channel.basicQos(getPrefetchCountAsInt());
         return ret;
