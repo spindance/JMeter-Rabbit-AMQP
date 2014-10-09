@@ -27,8 +27,10 @@ public abstract class AMQPSampler extends AbstractSampler implements ThreadListe
     private static final String CERT_TYPE = "SunX509";
     private static final String SSL_VERSION = "TLSv1.2";
 
+    public static final boolean DEFAULT_EXCHANGE_DECLARE = false;
     public static final boolean DEFAULT_EXCHANGE_DURABLE = true;
     public static final boolean DEFAULT_EXCHANGE_REDECLARE = false;
+    public static final boolean DEFAULT_QUEUE_DECLARE = false;
     public static final boolean DEFAULT_QUEUE_REDECLARE = false;
 
     public static final int DEFAULT_PORT = 5672;
@@ -45,10 +47,12 @@ public abstract class AMQPSampler extends AbstractSampler implements ThreadListe
 
     //++ These are JMX names, and must not be changed
     protected static final String EXCHANGE = "AMQPSampler.Exchange";
+    protected static final String EXCHANGE_DECLARE = "AMQPSampler.ExchangeDeclare";
     protected static final String EXCHANGE_TYPE = "AMQPSampler.ExchangeType";
     protected static final String EXCHANGE_DURABLE = "AMQPSampler.ExchangeDurable";
     protected static final String EXCHANGE_REDECLARE = "AMQPSampler.ExchangeRedeclare";
     protected static final String QUEUE = "AMQPSampler.Queue";
+    protected static final String QUEUE_DECLARE = "AMQPSampler.QueueDeclare";
     protected static final String ROUTING_KEY = "AMQPSampler.RoutingKey";
     protected static final String VIRUTAL_HOST = "AMQPSampler.VirtualHost";
     protected static final String HOST = "AMQPSampler.Host";
@@ -95,7 +99,7 @@ public abstract class AMQPSampler extends AbstractSampler implements ThreadListe
             //TODO: Break out queue binding
             boolean queueConfigured = (getQueue() != null && !getQueue().isEmpty());
 
-            if(queueConfigured) {
+            if(queueConfigured && getQueueDeclare()) {
                 if (getQueueRedeclare()) {
                     deleteQueue();
                 }
@@ -103,18 +107,19 @@ public abstract class AMQPSampler extends AbstractSampler implements ThreadListe
                 AMQP.Queue.DeclareOk declareQueueResp = channel.queueDeclare(getQueue(), queueDurable(), queueExclusive(), queueAutoDelete(), getQueueArguments());
             }
 
-            if(!StringUtils.isBlank(getExchange())) { //Use a named exchange
+            if(!StringUtils.isBlank(getExchange()) && getExchangeDeclare()) { //Use a named exchange
                 if (getExchangeRedeclare()) {
                     deleteExchange();
                 }
 
                 AMQP.Exchange.DeclareOk declareExchangeResp = channel.exchangeDeclare(getExchange(), getExchangeType(), getExchangeDurable());
-                if (queueConfigured) {
-                    channel.queueBind(getQueue(), getExchange(), getRoutingKey());
-                }
             }
 
-        log.info("bound to:"
+            if (queueConfigured) {
+              channel.queueBind(getQueue(), getExchange(), getRoutingKey());
+            }
+
+            log.info("bound to:"
                 +"\n\t queue: " + getQueue()
                 +"\n\t exchange: " + getExchange()
                 +"\n\t exchange(D)? " + getExchangeDurable()
@@ -190,6 +195,13 @@ public abstract class AMQPSampler extends AbstractSampler implements ThreadListe
         setProperty(EXCHANGE, name);
     }
 
+    public boolean getExchangeDeclare() {
+        return getPropertyAsBoolean(EXCHANGE_DECLARE);
+    }
+
+    public void setExchangeDeclare(boolean exchangeDeclare) {
+        setProperty(EXCHANGE_DECLARE, exchangeDeclare);
+    }
 
     public boolean getExchangeDurable() {
         return getPropertyAsBoolean(EXCHANGE_DURABLE);
@@ -225,6 +237,13 @@ public abstract class AMQPSampler extends AbstractSampler implements ThreadListe
         setProperty(QUEUE, name);
     }
 
+    public boolean getQueueDeclare() {
+        return getPropertyAsBoolean(QUEUE_DECLARE);
+    }
+
+    public void setQueueDeclare(boolean queueDeclare) {
+        setProperty(QUEUE_DECLARE, queueDeclare);
+    }
 
     public String getRoutingKey() {
         return getPropertyAsString(ROUTING_KEY);
