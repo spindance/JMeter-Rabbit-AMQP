@@ -2,6 +2,7 @@ package com.zeroclue.jmeter.protocol.amqp;
 
 import java.io.IOException;
 import java.io.FileInputStream;
+import java.nio.file.Paths;
 import java.util.*;
 import java.security.*;
 import javax.net.ssl.KeyManagerFactory;
@@ -563,7 +564,7 @@ public abstract class AMQPSampler extends AbstractSampler implements ThreadListe
 
     private KeyStore getKeyStore(String path, String pass) throws Exception {
         KeyStore ks = KeyStore.getInstance(KEYSTORE_TYPE);
-        ks.load(new FileInputStream(path), pass.toCharArray());
+        ks.load(new FileInputStream(Paths.get(path).toAbsolutePath().toString()), pass.toCharArray());
         return ks;
     }
 }
