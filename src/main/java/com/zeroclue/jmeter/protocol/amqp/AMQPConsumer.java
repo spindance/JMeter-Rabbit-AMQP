@@ -92,9 +92,11 @@ public class AMQPConsumer extends AMQPSampler implements Interruptible, TestStat
                  * Set up the sample result details
                  */
                 if (getReadResponseAsBoolean()) {
-                    String response = new String(delivery.getBody());
+                    byte[] body = delivery.getBody();
+                    String response = new String(body);
                     result.setSamplerData(response);
                     result.setResponseMessage(response);
+                    result.setResponseData(body);
                 }
                 else {
                     result.setSamplerData("Read response is false.");
