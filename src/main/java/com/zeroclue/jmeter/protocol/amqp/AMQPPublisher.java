@@ -48,6 +48,7 @@ public class AMQPPublisher extends AMQPSampler implements Interruptible {
     private final static String USE_TX = "AMQPConsumer.UseTx";
 
     private transient Channel channel;
+    private transient byte[] messageBytes;
 
     public AMQPPublisher() {
         super();
@@ -122,11 +123,6 @@ public class AMQPPublisher extends AMQPSampler implements Interruptible {
         return result;
     }
 
-
-    private byte[] getMessageBytes() {
-        return getMessage().getBytes();
-    }
-
     /**
      * @return the message routing key for the sample
      */
@@ -147,6 +143,10 @@ public class AMQPPublisher extends AMQPSampler implements Interruptible {
 
     public void setMessage(String content) {
         setProperty(MESSAGE, content);
+    }
+
+    public void setMessageBytes(byte[] bytes) {
+        this.messageBytes = bytes;
     }
 
     /**
@@ -261,5 +261,14 @@ public class AMQPPublisher extends AMQPSampler implements Interruptible {
             result.put(item.getKey(), item.getValue());
         }
         return result;
+    }
+
+    private byte[] getMessageBytes() {
+        // messageBytes overrides message
+        if (messageBytes != null) {
+            return messageBytes;
+        } else {
+            return getMessage().getBytes();
+        }
     }
 }

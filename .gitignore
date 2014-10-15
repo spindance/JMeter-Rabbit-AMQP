@@ -3,6 +3,7 @@
 .settings/
 *\.sw[po]
 .DS_Store
+._*
 stats/
 target/
 gc.log
