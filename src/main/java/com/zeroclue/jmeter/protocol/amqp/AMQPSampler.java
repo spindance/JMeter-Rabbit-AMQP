@@ -24,6 +24,7 @@ public abstract class AMQPSampler extends AbstractSampler implements ThreadListe
 
     // these are hard-coded for now, should eventually be configurable
     private static final String KEYSTORE_TYPE = "PKCS12";
+    private static final String TRUSTSTORE_TYPE = "JKS";
     private static final String CERT_TYPE = "SunX509";
     private static final String SSL_VERSION = "TLSv1.2";
 
@@ -569,20 +570,20 @@ public abstract class AMQPSampler extends AbstractSampler implements ThreadListe
 
     private KeyManager[] getKeyManagers() throws Exception {
         KeyManagerFactory kmf = KeyManagerFactory.getInstance(CERT_TYPE);
-        kmf.init(getKeyStore(getPathToKeyStore(), getKeyStorePassword()), getKeyStorePassword().toCharArray());
+        kmf.init(getKeyStore(getPathToKeyStore(), getKeyStorePassword(), KEYSTORE_TYPE), getKeyStorePassword().toCharArray());
 
         return kmf.getKeyManagers();
     }
 
     private TrustManager[] getTrustManagers() throws Exception {
         TrustManagerFactory tmf = TrustManagerFactory.getInstance(CERT_TYPE);
-        tmf.init(getKeyStore(getPathToTrustStore(), getTrustStorePassword()));
+        tmf.init(getKeyStore(getPathToTrustStore(), getTrustStorePassword(), TRUSTSTORE_TYPE));
 
         return tmf.getTrustManagers();
     }
 
-    private KeyStore getKeyStore(String path, String pass) throws Exception {
-        KeyStore ks = KeyStore.getInstance(KEYSTORE_TYPE);
+    private KeyStore getKeyStore(String path, String pass, String keyStoreType) throws Exception {
+        KeyStore ks = KeyStore.getInstance(keyStoreType);
         ks.load(new FileInputStream(Paths.get(path).toAbsolutePath().toString()), pass.toCharArray());
         return ks;
     }
