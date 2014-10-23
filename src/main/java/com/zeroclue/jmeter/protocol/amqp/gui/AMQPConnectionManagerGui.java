@@ -34,8 +34,8 @@ public class AMQPConnectionManagerGui extends AbstractConfigGui {
     private JLabeledTextField trustStorePassword = new JLabeledTextField("Trust Store Password");
     private final JCheckBox cbSSL = new JCheckBox("SSL?", false);
     private final JCheckBox cbSSLClientCert = new JCheckBox("Client SSL Cert?", false);
-    private JLabeledTextField timeout = new JLabeledTextField("Timeout");
-    private JLabeledTextField heartbeat = new JLabeledTextField("Heartbeat");
+    private JLabeledTextField timeout = new JLabeledTextField("Timeout (milliseconds, 0 = infinite)");
+    private JLabeledTextField heartbeat = new JLabeledTextField("Heartbeat (seconds, 0 = none)");
 
     /**
      * Create a new AMQPConnectionManagerGui as a standalone component.
@@ -126,7 +126,7 @@ public class AMQPConnectionManagerGui extends AbstractConfigGui {
         manager.setConnectionSSL(cbSSL.isSelected());
         manager.setSSLClientCert(cbSSLClientCert.isSelected());
         manager.setTimeout(timeout.getText());
-        manager.setTimeout(heartbeat.getText());
+        manager.setHeartbeat(heartbeat.getText());
     }
 
     /**

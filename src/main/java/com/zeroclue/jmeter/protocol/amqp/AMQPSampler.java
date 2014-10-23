@@ -30,29 +30,17 @@ public abstract class AMQPSampler extends AbstractSampler
             Arrays.asList(new String[]{
                     "com.zeroclue.jmeter.protocol.amqp.gui.AMQPConnectionManagerGui"}));
 
-    // these are hard-coded for now, should eventually be configurable
-    private static final String KEYSTORE_TYPE = "PKCS12";
-    private static final String TRUSTSTORE_TYPE = "JKS";
-    private static final String CERT_TYPE = "SunX509";
-    private static final String SSL_VERSION = "TLSv1.2";
-
     public static final boolean DEFAULT_EXCHANGE_DECLARE = false;
     public static final boolean DEFAULT_EXCHANGE_DURABLE = true;
     public static final boolean DEFAULT_EXCHANGE_REDECLARE = false;
     public static final boolean DEFAULT_QUEUE_DECLARE = false;
     public static final boolean DEFAULT_QUEUE_REDECLARE = false;
 
-    public static final int DEFAULT_PORT = 5672;
-    public static final String DEFAULT_PORT_STRING = Integer.toString(DEFAULT_PORT);
-
-    public static final int DEFAULT_TIMEOUT = 1000;
-    public static final String DEFAULT_TIMEOUT_STRING = Integer.toString(DEFAULT_TIMEOUT);
 
     public static final int DEFAULT_ITERATIONS = 1;
     public static final String DEFAULT_ITERATIONS_STRING = Integer.toString(DEFAULT_ITERATIONS);
 
     private static final Logger log = LoggingManager.getLoggerForClass();
-
 
     //++ These are JMX names, and must not be changed
     protected static final String EXCHANGE = "AMQPSampler.Exchange";
@@ -63,18 +51,6 @@ public abstract class AMQPSampler extends AbstractSampler
     protected static final String QUEUE = "AMQPSampler.Queue";
     protected static final String QUEUE_DECLARE = "AMQPSampler.QueueDeclare";
     protected static final String ROUTING_KEY = "AMQPSampler.RoutingKey";
-    protected static final String VIRUTAL_HOST = "AMQPSampler.VirtualHost";
-    protected static final String HOST = "AMQPSampler.Host";
-    protected static final String PORT = "AMQPSampler.Port";
-    protected static final String SSL = "AMQPSampler.SSL";
-    protected static final String SSL_CLIENT_CERT = "AMQPSampler.SSLClientCert";
-    protected static final String USERNAME = "AMQPSampler.Username";
-    protected static final String PASSWORD = "AMQPSampler.Password";
-    protected static final String PATH_TO_KEY_STORE = "AMQPSampler.PathToKeyStore";
-    protected static final String KEY_STORE_PASSWORD = "AMQPSampler.KeyStorePassword";
-    protected static final String PATH_TO_TRUST_STORE = "AMQPSampler.PathToTrustStore";
-    protected static final String TRUST_STORE_PASSWORD = "AMQPSampler.TrustStorePassword";
-    private static final String TIMEOUT = "AMQPSampler.Timeout";
     private static final String ITERATIONS = "AMQPSampler.Iterations";
     private static final String MESSAGE_TTL = "AMQPSampler.MessageTTL";
     private static final String MESSAGE_EXPIRES = "AMQPSampler.MessageExpires";
@@ -82,7 +58,6 @@ public abstract class AMQPSampler extends AbstractSampler
     private static final String QUEUE_REDECLARE = "AMQPSampler.Redeclare";
     private static final String QUEUE_EXCLUSIVE = "AMQPSampler.QueueExclusive";
     private static final String QUEUE_AUTO_DELETE = "AMQPSampler.QueueAutoDelete";
-    private static final int DEFAULT_HEARTBEAT = 1;
 
     private transient ConnectionFactory factory;
     private transient Connection connection;
@@ -90,18 +65,19 @@ public abstract class AMQPSampler extends AbstractSampler
     private transient AMQPConnectionManager connectionManager;
 
     protected AMQPSampler(){
-        factory = new ConnectionFactory();
-        factory.setRequestedHeartbeat(DEFAULT_HEARTBEAT);
+
     }
 
     @Override
     public void addTestElement(TestElement el) {
         if (el instanceof AMQPConnectionManager) {
-            setConnectionManager((AMQPConnectionManager) el);
+            if (getConnectionManager() == null) {
+                // We only want the lowest level Connection Manager, ignore the rest.
+                setConnectionManager((AMQPConnectionManager) el);
+            }
         } else {
             super.addTestElement(el);
         }
-        log.info("addTestElement: " + el);
     }
 
     @Override
@@ -114,6 +90,10 @@ public abstract class AMQPSampler extends AbstractSampler
         this.connectionManager = connectionManager;
     }
 
+    protected AMQPConnectionManager getConnectionManager() {
+        return connectionManager;
+    }
+
     protected boolean initChannel() throws Exception {
         Channel channel = getChannel();
 
@@ -124,7 +104,7 @@ public abstract class AMQPSampler extends AbstractSampler
         }
 
         if(channel == null) {
-            channel = createChannel();
+            channel = getConnectionManager().createChannel();
             setChannel(channel);
 
             //TODO: Break out queue binding
@@ -190,22 +170,6 @@ public abstract class AMQPSampler extends AbstractSampler
         return this.getName();
     }
 
-    protected int getTimeoutAsInt() {
-        if (getPropertyAsInt(TIMEOUT) < 1) {
-            return DEFAULT_TIMEOUT;
-        }
-        return getPropertyAsInt(TIMEOUT);
-    }
-
-    public String getTimeout() {
-        return getPropertyAsString(TIMEOUT, DEFAULT_TIMEOUT_STRING);
-    }
-
-
-    public void setTimeout(String s) {
-        setProperty(TIMEOUT, s);
-    }
-
     public String getIterations() {
         return getPropertyAsString(ITERATIONS, DEFAULT_ITERATIONS_STRING);
     }
@@ -242,7 +206,6 @@ public abstract class AMQPSampler extends AbstractSampler
         setProperty(EXCHANGE_DURABLE, durable);
     }
 
-
     public String getExchangeType() {
         return getPropertyAsString(EXCHANGE_TYPE);
     }
@@ -250,7 +213,6 @@ public abstract class AMQPSampler extends AbstractSampler
     public void setExchangeType(String name) {
         setProperty(EXCHANGE_TYPE, name);
     }
-
 
     public Boolean getExchangeRedeclare() {
         return getPropertyAsBoolean(EXCHANGE_REDECLARE);
@@ -284,16 +246,6 @@ public abstract class AMQPSampler extends AbstractSampler
         setProperty(ROUTING_KEY, name);
     }
 
-
-    public String getVirtualHost() {
-        return getPropertyAsString(VIRUTAL_HOST);
-    }
-
-    public void setVirtualHost(String name) {
-        setProperty(VIRUTAL_HOST, name);
-    }
-
-
     public String getMessageTTL() {
         return getPropertyAsString(MESSAGE_TTL);
     }
@@ -309,7 +261,6 @@ public abstract class AMQPSampler extends AbstractSampler
         return getPropertyAsInt(MESSAGE_TTL);
     }
 
-
     public String getMessageExpires() {
         return getPropertyAsString(MESSAGE_EXPIRES);
     }
@@ -323,104 +274,6 @@ public abstract class AMQPSampler extends AbstractSampler
             return null;
         }
         return getPropertyAsInt(MESSAGE_EXPIRES);
-    }
-
-
-    public String getHost() {
-        return getPropertyAsString(HOST);
-    }
-
-    public void setHost(String name) {
-        setProperty(HOST, name);
-    }
-
-
-    public String getPort() {
-        return getPropertyAsString(PORT);
-    }
-
-    public void setPort(String name) {
-        setProperty(PORT, name);
-    }
-
-    protected int getPortAsInt() {
-        if (getPropertyAsInt(PORT) < 1) {
-            return DEFAULT_PORT;
-        }
-        return getPropertyAsInt(PORT);
-    }
-
-    public void setConnectionSSL(String content) {
-        setProperty(SSL, content);
-    }
-
-    public void setConnectionSSL(Boolean value) {
-        setProperty(SSL, value.toString());
-    }
-
-    public boolean connectionSSL() {
-        return getPropertyAsBoolean(SSL);
-    }
-
-    public void setSSLClientCert(String content) {
-        setProperty(SSL_CLIENT_CERT, content);
-    }
-
-    public void setSSLClientCert(Boolean value) {
-        setProperty(SSL_CLIENT_CERT, value.toString());
-    }
-
-    public boolean sslClientCert() {
-        return getPropertyAsBoolean(SSL_CLIENT_CERT);
-    }
-
-    public String getUsername() {
-        return getPropertyAsString(USERNAME);
-    }
-
-    public void setUsername(String name) {
-        setProperty(USERNAME, name);
-    }
-
-
-    public String getPassword() {
-        return getPropertyAsString(PASSWORD);
-    }
-
-    public void setPassword(String name) {
-        setProperty(PASSWORD, name);
-    }
-
-    public String getPathToKeyStore() {
-        return getPropertyAsString(PATH_TO_KEY_STORE);
-    }
-
-    public void setPathToKeyStore(String pathToKeyStore) {
-        setProperty(PATH_TO_KEY_STORE, pathToKeyStore);
-    }
-
-    public String getKeyStorePassword() {
-        return getPropertyAsString(KEY_STORE_PASSWORD);
-    }
-
-    public void setKeyStorePassword(String keyStorePassword) {
-        setProperty(KEY_STORE_PASSWORD, keyStorePassword);
-    }
-
-    public String getPathToTrustStore() {
-        return getPropertyAsString(PATH_TO_TRUST_STORE);
-    }
-
-    public void setPathToTrustStore(String pathToTrustStore) {
-        setProperty(PATH_TO_TRUST_STORE, pathToTrustStore);
-    }
-
-    public String getTrustStorePassword() {
-        return getPropertyAsString(TRUST_STORE_PASSWORD);
-    }
-
-    public void setTrustStorePassword(String trustStorePassword) {
-        setProperty(TRUST_STORE_PASSWORD, trustStorePassword);
     }
 
     /**
@@ -480,7 +333,6 @@ public abstract class AMQPSampler extends AbstractSampler
         return getPropertyAsBoolean(QUEUE_AUTO_DELETE);
     }
 
-
     public Boolean getQueueRedeclare() {
         return getPropertyAsBoolean(QUEUE_REDECLARE);
     }
@@ -490,13 +342,13 @@ public abstract class AMQPSampler extends AbstractSampler
     }
 
     protected void cleanup() {
-        try {
-            //getChannel().close();   // closing the connection will close the channel if it's still open
-            if(connection != null && connection.isOpen())
-                connection.close();
-        } catch (IOException e) {
-            log.error("Failed to close connection", e);
-        }
+        // try {
+        //     //getChannel().close();   // closing the connection will close the channel if it's still open
+        //     if(connection != null && connection.isOpen())
+        //         connection.close();
+        // } catch (IOException e) {
+        //     log.error("Failed to close connection", e);
+        // }
     }
 
     @Override
@@ -510,52 +362,9 @@ public abstract class AMQPSampler extends AbstractSampler
 
     }
 
-    protected Channel createChannel() throws Exception {
-        log.info("Creating channel " + getVirtualHost()+":"+getPortAsInt());
-
-         if (connection == null || !connection.isOpen()) {
-            factory.setConnectionTimeout(getTimeoutAsInt());
-            factory.setVirtualHost(getVirtualHost());
-            factory.setUsername(getUsername());
-            factory.setPassword(getPassword());
-            if (connectionSSL()) {
-                if (sslClientCert()) {
-                    factory.useSslProtocol(getSslContext());
-                } else {
-                    factory.useSslProtocol("TLS");
-                }
-            }
-
-            log.info("RabbitMQ ConnectionFactory using:"
-                  +"\n\t virtual host: " + getVirtualHost()
-                  +"\n\t host: " + getHost()
-                  +"\n\t port: " + getPort()
-                  +"\n\t username: " + getUsername()
-                  +"\n\t password: " + getPassword()
-                  +"\n\t timeout: " + getTimeout()
-                  +"\n\t heartbeat: " + factory.getRequestedHeartbeat()
-                  +"\nin " + this
-                  );
-
-            String[] hosts = getHost().split(",");
-            Address[] addresses = new Address[hosts.length];
-            for (int i = 0; i < hosts.length; i++) {
-                addresses[i] = new Address(hosts[i], getPortAsInt());
-            }
-            log.info("Using hosts: " + Arrays.toString(hosts) + " addresses: " + Arrays.toString(addresses));
-            connection = factory.newConnection(addresses);
-         }
-
-         Channel channel = connection.createChannel();
-         if(!channel.isOpen()){
-             log.fatalError("Failed to open channel: " + channel.getCloseReason().getLocalizedMessage());
-         }
-        return channel;
-    }
-
     protected void deleteQueue() throws Exception {
         // use a different channel since channel closes on exception.
-        Channel channel = createChannel();
+        Channel channel = getConnectionManager().createChannel();
         try {
             log.info("Deleting queue " + getQueue());
             channel.queueDelete(getQueue());
@@ -573,7 +382,7 @@ public abstract class AMQPSampler extends AbstractSampler
 
     protected void deleteExchange() throws Exception {
         // use a different channel since channel closes on exception.
-        Channel channel = createChannel();
+        Channel channel = getConnectionManager().createChannel();
         try {
             log.info("Deleting exchange " + getExchange());
             channel.exchangeDelete(getExchange());
@@ -587,34 +396,5 @@ public abstract class AMQPSampler extends AbstractSampler
                 channel.close();
             }
         }
-    }
-
-    private SSLContext getSslContext() throws Exception {
-        SSLContext c = SSLContext.getInstance(SSL_VERSION);
-
-        // use the default SecureRandom implementation by setting the third param to null
-        c.init(getKeyManagers(), getTrustManagers(), null);
-
-        return c;
-    }
-
-    private KeyManager[] getKeyManagers() throws Exception {
-        KeyManagerFactory kmf = KeyManagerFactory.getInstance(CERT_TYPE);
-        kmf.init(getKeyStore(getPathToKeyStore(), getKeyStorePassword(), KEYSTORE_TYPE), getKeyStorePassword().toCharArray());
-
-        return kmf.getKeyManagers();
-    }
-
-    private TrustManager[] getTrustManagers() throws Exception {
-        TrustManagerFactory tmf = TrustManagerFactory.getInstance(CERT_TYPE);
-        tmf.init(getKeyStore(getPathToTrustStore(), getTrustStorePassword(), TRUSTSTORE_TYPE));
-
-        return tmf.getTrustManagers();
-    }
-
-    private KeyStore getKeyStore(String path, String pass, String keyStoreType) throws Exception {
-        KeyStore ks = KeyStore.getInstance(keyStoreType);
-        ks.load(new FileInputStream(Paths.get(path).toAbsolutePath().toString()), pass.toCharArray());
-        return ks;
     }
 }

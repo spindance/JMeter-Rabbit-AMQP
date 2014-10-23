@@ -28,26 +28,45 @@ import java.util.List;
 import org.apache.commons.io.IOUtils;
 import org.apache.jmeter.config.ConfigTestElement;
 import org.apache.jmeter.testelement.TestElement;
+import org.apache.jmeter.testelement.TestStateListener;
 import org.apache.jmeter.testelement.property.CollectionProperty;
 import org.apache.jmeter.testelement.property.JMeterProperty;
 import org.apache.jorphan.util.JOrphanUtils;
 
 //
+import java.util.*;
+import java.io.FileInputStream;
+import java.nio.file.Paths;
+
 import java.io.Serializable;
 import org.apache.jmeter.testelement.AbstractTestElement;
 import org.apache.jmeter.config.ConfigElement;
 
 import com.rabbitmq.client.*;
 
+import org.apache.jmeter.testelement.ThreadListener;
+
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.SSLContext;
+
 /**
  * This class is used to manage an AMQP connect. This allows multiple AMQP samples to use the
  * same connection.
  */
 public class AMQPConnectionManager extends ConfigTestElement
-    implements Serializable {
+    implements ThreadListener {
 
     private static final long serialVersionUID = 1L;
     private static final Logger log = LoggingManager.getLoggerForClass();
+
+    // these are hard-coded for now, should eventually be configurable
+    private static final String KEYSTORE_TYPE = "PKCS12";
+    private static final String TRUSTSTORE_TYPE = "JKS";
+    private static final String CERT_TYPE = "SunX509";
+    private static final String SSL_VERSION = "TLSv1.2";
 
     public static final int DEFAULT_PORT = 5672;
     public static final String DEFAULT_PORT_STRING = Integer.toString(DEFAULT_PORT);
@@ -84,7 +103,8 @@ public class AMQPConnectionManager extends ConfigTestElement
      */
     @Override
     public void addConfigElement(ConfigElement config) {
-        // mergeIn((TestElement) config);
+        // Can't figure out when/how this would be called, but it doesn't seem like we want it to
+        // do anything anyway.
     }
 
     /**
@@ -92,7 +112,7 @@ public class AMQPConnectionManager extends ConfigTestElement
      */
     @Override
     public boolean expectsModification() {
-        // We don't want to clone the AMQPConnectionManager for each sampler
+        // Don't clone the AMQPConnectionManager for each sampler
         return true;
     }
 
@@ -228,5 +248,103 @@ public class AMQPConnectionManager extends ConfigTestElement
 
     public void setHeartbeat(String s) {
         setProperty(HEARTBEAT, s);
+    }
+
+    @Override
+    public void threadStarted() {
+
+    }
+
+    @Override
+    public void threadFinished() {
+        log.info("AMQPConnectionManager.threadFinished called");
+        cleanup();
+    }
+
+    public Channel createChannel() throws Exception {
+        log.info("Creating channel " + getVirtualHost()+":"+getPortAsInt());
+
+         Channel channel = getConnection().createChannel();
+         if(!channel.isOpen()){
+            log.fatalError("Failed to open channel: " + channel.getCloseReason().getLocalizedMessage());
+         }
+        return channel;
+    }
+
+    public Connection getConnection() throws Exception {
+        if (connection == null || !connection.isOpen()) {
+
+            factory.setVirtualHost(getVirtualHost());
+            factory.setUsername(getUsername());
+            factory.setPassword(getPassword());
+            factory.setConnectionTimeout(getTimeoutAsInt());
+            factory.setRequestedHeartbeat(getHeartbeatAsInt());
+            if (connectionSSL()) {
+                if (sslClientCert()) {
+                    factory.useSslProtocol(getSslContext());
+                } else {
+                    factory.useSslProtocol("TLS");
+                }
+            }
+
+            log.info("RabbitMQ ConnectionFactory using:"
+                  +"\n\t virtual host: " + getVirtualHost()
+                  +"\n\t host: " + getHost()
+                  +"\n\t port: " + getPort()
+                  +"\n\t username: " + getUsername()
+                  +"\n\t password: " + getPassword()
+                  +"\n\t timeout: " + getTimeout()
+                  +"\n\t heartbeat: " + getHeartbeat()
+                  +"\nin " + this
+                  );
+
+            String[] hosts = getHost().split(",");
+            Address[] addresses = new Address[hosts.length];
+            for (int i = 0; i < hosts.length; i++) {
+                addresses[i] = new Address(hosts[i], getPortAsInt());
+            }
+            log.info("Using hosts: " + Arrays.toString(hosts) + " addresses: " + Arrays.toString(addresses));
+            connection = factory.newConnection(addresses);
+        }
+        return connection;
+    }
+
+    protected void cleanup() {
+        try {
+            if(connection != null && connection.isOpen()) {
+                connection.close();
+            }
+        } catch (IOException e) {
+            log.error("Failed to close connection", e);
+        }
+    }
+
+    private SSLContext getSslContext() throws Exception {
+        SSLContext c = SSLContext.getInstance(SSL_VERSION);
+
+        // use the default SecureRandom implementation by setting the third param to null
+        c.init(getKeyManagers(), getTrustManagers(), null);
+
+        return c;
+    }
+
+    private KeyManager[] getKeyManagers() throws Exception {
+        KeyManagerFactory kmf = KeyManagerFactory.getInstance(CERT_TYPE);
+        kmf.init(getKeyStore(getPathToKeyStore(), getKeyStorePassword(), KEYSTORE_TYPE), getKeyStorePassword().toCharArray());
+
+        return kmf.getKeyManagers();
+    }
+
+    private TrustManager[] getTrustManagers() throws Exception {
+        TrustManagerFactory tmf = TrustManagerFactory.getInstance(CERT_TYPE);
+        tmf.init(getKeyStore(getPathToTrustStore(), getTrustStorePassword(), TRUSTSTORE_TYPE));
+
+        return tmf.getTrustManagers();
+    }
+
+    private KeyStore getKeyStore(String path, String pass, String keyStoreType) throws Exception {
+        KeyStore ks = KeyStore.getInstance(keyStoreType);
+        ks.load(new FileInputStream(Paths.get(path).toAbsolutePath().toString()), pass.toCharArray());
+        return ks;
     }
 }
