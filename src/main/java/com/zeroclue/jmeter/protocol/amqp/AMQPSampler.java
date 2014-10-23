@@ -12,15 +12,23 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.SSLContext;
 
 import com.rabbitmq.client.*;
+import org.apache.jmeter.config.ConfigTestElement;
 import org.apache.jmeter.samplers.AbstractSampler;
+import org.apache.jmeter.testelement.TestElement;
 import org.apache.jmeter.testelement.ThreadListener;
+import org.apache.jmeter.engine.util.ConfigMergabilityIndicator;
 import org.apache.jorphan.logging.LoggingManager;
 import org.apache.log.Logger;
 
 import com.rabbitmq.client.AMQP.BasicProperties;
 import org.apache.commons.lang3.StringUtils;
 
-public abstract class AMQPSampler extends AbstractSampler implements ThreadListener {
+public abstract class AMQPSampler extends AbstractSampler
+    implements ThreadListener, ConfigMergabilityIndicator {
+
+    private static final Set<String> APPLIABLE_CONFIG_CLASSES = new HashSet<String>(
+            Arrays.asList(new String[]{
+                    "com.zeroclue.jmeter.protocol.amqp.gui.AMQPConnectionManagerGui"}));
 
     // these are hard-coded for now, should eventually be configurable
     private static final String KEYSTORE_TYPE = "PKCS12";
@@ -79,9 +87,31 @@ public abstract class AMQPSampler extends AbstractSampler implements ThreadListe
     private transient ConnectionFactory factory;
     private transient Connection connection;
 
+    private transient AMQPConnectionManager connectionManager;
+
     protected AMQPSampler(){
         factory = new ConnectionFactory();
         factory.setRequestedHeartbeat(DEFAULT_HEARTBEAT);
+    }
+
+    @Override
+    public void addTestElement(TestElement el) {
+        if (el instanceof AMQPConnectionManager) {
+            setConnectionManager((AMQPConnectionManager) el);
+        } else {
+            super.addTestElement(el);
+        }
+        log.info("addTestElement: " + el);
+    }
+
+    @Override
+    public boolean applies(ConfigTestElement configElement) {
+        String guiClass = configElement.getProperty(TestElement.GUI_CLASS).getStringValue();
+        return APPLIABLE_CONFIG_CLASSES.contains(guiClass);
+    }
+
+    protected void setConnectionManager(AMQPConnectionManager connectionManager) {
+        this.connectionManager = connectionManager;
     }
 
     protected boolean initChannel() throws Exception {
