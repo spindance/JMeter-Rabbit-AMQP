@@ -342,13 +342,7 @@ public abstract class AMQPSampler extends AbstractSampler
     }
 
     protected void cleanup() {
-        // try {
-        //     //getChannel().close();   // closing the connection will close the channel if it's still open
-        //     if(connection != null && connection.isOpen())
-        //         connection.close();
-        // } catch (IOException e) {
-        //     log.error("Failed to close connection", e);
-        // }
+
     }
 
     @Override

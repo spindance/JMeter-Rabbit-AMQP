@@ -1,56 +1,26 @@
 package com.zeroclue.jmeter.protocol.amqp;
 
-import java.io.IOException;
 import java.security.*;
-
-import org.apache.jmeter.samplers.Entry;
-import org.apache.jmeter.samplers.Interruptible;
-import org.apache.jmeter.samplers.SampleResult;
-import org.apache.jmeter.testelement.TestStateListener;
-import org.apache.jorphan.logging.LoggingManager;
-import org.apache.log.Logger;
-
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.ConsumerCancelledException;
-import com.rabbitmq.client.QueueingConsumer;
-import com.rabbitmq.client.ShutdownSignalException;
-
-
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.List;
-
-import org.apache.commons.io.IOUtils;
-import org.apache.jmeter.config.ConfigTestElement;
-import org.apache.jmeter.testelement.TestElement;
-import org.apache.jmeter.testelement.TestStateListener;
-import org.apache.jmeter.testelement.property.CollectionProperty;
-import org.apache.jmeter.testelement.property.JMeterProperty;
-import org.apache.jorphan.util.JOrphanUtils;
-
-//
-import java.util.*;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.nio.file.Paths;
-
-import java.io.Serializable;
-import org.apache.jmeter.testelement.AbstractTestElement;
-import org.apache.jmeter.config.ConfigElement;
-
-import com.rabbitmq.client.*;
-
-import org.apache.jmeter.testelement.ThreadListener;
+import java.util.Arrays;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.SSLContext;
+
+import org.apache.jorphan.logging.LoggingManager;
+import org.apache.log.Logger;
+
+import org.apache.jmeter.testelement.ThreadListener;
+import org.apache.jmeter.config.ConfigTestElement;
+import org.apache.jmeter.config.ConfigElement;
+
+import com.rabbitmq.client.*;
 
 /**
  * This class is used to manage an AMQP connect. This allows multiple AMQP samples to use the
