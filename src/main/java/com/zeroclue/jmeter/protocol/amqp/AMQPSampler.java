@@ -104,7 +104,7 @@ public abstract class AMQPSampler extends AbstractSampler
         }
 
         if(channel == null) {
-            channel = getConnectionManager().createChannel();
+            channel = getConnectionManager().getChannel();
             setChannel(channel);
 
             //TODO: Break out queue binding
