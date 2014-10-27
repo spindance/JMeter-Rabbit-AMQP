@@ -1,5 +1,5 @@
 ### Changelog ###
-- 3.master
+- 11.master, 10.master
     - Add user-id message property field
     - Set response data on consumer to delivery body byte array. Use `getResponseData()` to access
     - Add `setMessageBytes` to publisher to allow publishing of binary data
