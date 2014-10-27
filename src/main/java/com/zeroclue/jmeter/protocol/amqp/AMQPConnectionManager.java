@@ -23,7 +23,7 @@ import org.apache.jmeter.config.ConfigElement;
 import com.rabbitmq.client.*;
 
 /**
- * This class is used to manage an AMQP connect. This allows multiple AMQP samples to use the
+ * This class is used to manage an AMQP connection. This allows multiple AMQP samples to use the
  * same connection.
  */
 public class AMQPConnectionManager extends ConfigTestElement
