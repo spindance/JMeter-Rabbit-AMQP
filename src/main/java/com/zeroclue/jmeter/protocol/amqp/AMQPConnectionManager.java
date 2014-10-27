@@ -63,6 +63,7 @@ public class AMQPConnectionManager extends ConfigTestElement
 
     private transient ConnectionFactory factory;
     private transient Connection connection;
+    private transient Channel sharedChannel;
 
     public AMQPConnectionManager() {
         factory = new ConnectionFactory();
@@ -239,6 +240,13 @@ public class AMQPConnectionManager extends ConfigTestElement
             log.fatalError("Failed to open channel: " + channel.getCloseReason().getLocalizedMessage());
          }
         return channel;
+    }
+
+    public Channel getChannel() throws Exception {
+        if (sharedChannel == null) {
+            sharedChannel = getConnection().createChannel();
+        }
+        return sharedChannel;
     }
 
     public Connection getConnection() throws Exception {
