@@ -21,6 +21,9 @@ public class AMQPConsumer extends AMQPSampler implements Interruptible, TestStat
     public static final boolean DEFAULT_READ_RESPONSE = true;
     public static final String DEFAULT_PREFETCH_COUNT_STRING = Integer.toString(DEFAULT_PREFETCH_COUNT);
 
+    public static final int DEFAULT_RECEIVE_TIMEOUT = 1000;
+    public static final String DEFAULT_RECEIVE_TIMEOUT_STRING = Integer.toString(DEFAULT_RECEIVE_TIMEOUT);
+
     private static final long serialVersionUID = 7480863561320459091L;
 
     private static final Logger log = LoggingManager.getLoggerForClass();
@@ -196,13 +199,13 @@ public class AMQPConsumer extends AMQPSampler implements Interruptible, TestStat
 
     protected int getReceiveTimeoutAsInt() {
         if (getPropertyAsInt(RECEIVE_TIMEOUT) < 1) {
-            return DEFAULT_TIMEOUT;
+            return DEFAULT_RECEIVE_TIMEOUT;
         }
         return getPropertyAsInt(RECEIVE_TIMEOUT);
     }
 
     public String getReceiveTimeout() {
-        return getPropertyAsString(RECEIVE_TIMEOUT, DEFAULT_TIMEOUT_STRING);
+        return getPropertyAsString(RECEIVE_TIMEOUT, DEFAULT_RECEIVE_TIMEOUT_STRING);
     }
 
 
@@ -248,8 +251,6 @@ public class AMQPConsumer extends AMQPSampler implements Interruptible, TestStat
     public boolean getReadResponseAsBoolean() {
         return getPropertyAsBoolean(READ_RESPONSE);
     }
-
-
 
     @Override
     public boolean interrupt() {

@@ -1,8 +1,6 @@
 package com.zeroclue.jmeter.protocol.amqp;
 
 import com.rabbitmq.client.AMQP;
-import java.io.IOException;
-import java.security.*;
 import java.util.*;
 
 import com.rabbitmq.client.MessageProperties;
