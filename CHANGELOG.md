@@ -1,4 +1,7 @@
 ### Changelog ###
+- (next)
+    - use a single thread for the consumer thread pool
+
 - 11.master, 10.master
     - Add user-id message property field
     - Set response data on consumer to delivery body byte array. Use `getResponseData()` to access
