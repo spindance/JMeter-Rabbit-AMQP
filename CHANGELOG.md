@@ -1,5 +1,5 @@
 ### Changelog ###
-- (next)
+- 12.master
     - use a single thread for the consumer thread pool
 
 - 11.master, 10.master
