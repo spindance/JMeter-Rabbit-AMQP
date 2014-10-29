@@ -6,6 +6,8 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ExecutorService;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.KeyManager;
@@ -47,6 +49,8 @@ public class AMQPConnectionManager extends ConfigTestElement
     public static final int DEFAULT_HEARTBEAT = 1;
     public static final String DEFAULT_HEARTBEAT_STRING = Integer.toString(DEFAULT_HEARTBEAT);
 
+    public static final int DEFAULT_POOL_SIZE = 1;
+
     private static final String VIRUTAL_HOST = "AMQPConnectionManager.VirtualHost";
     private static final String HOST = "AMQPConnectionManager.Host";
     private static final String PORT = "AMQPConnectionManager.Port";
@@ -64,6 +68,7 @@ public class AMQPConnectionManager extends ConfigTestElement
     private transient ConnectionFactory factory;
     private transient Connection connection;
     private transient Channel sharedChannel;
+    private transient ExecutorService pool;
 
     public AMQPConnectionManager() {
         factory = new ConnectionFactory();
@@ -282,15 +287,20 @@ public class AMQPConnectionManager extends ConfigTestElement
                 addresses[i] = new Address(hosts[i], getPortAsInt());
             }
             log.info("Using hosts: " + Arrays.toString(hosts) + " addresses: " + Arrays.toString(addresses));
-            connection = factory.newConnection(addresses);
+
+            pool = Executors.newFixedThreadPool(DEFAULT_POOL_SIZE);
+            connection = factory.newConnection(pool, addresses);
         }
         return connection;
     }
 
     protected void cleanup() {
         try {
-            if(connection != null && connection.isOpen()) {
+            if (connection != null && connection.isOpen()) {
                 connection.close();
+            }
+            if (pool != null) {
+                pool.shutdown();
             }
         } catch (IOException e) {
             log.error("Failed to close connection", e);
