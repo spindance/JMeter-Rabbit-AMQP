@@ -1,5 +1,5 @@
 ### Changelog ###
-- (next)
+- 13.master
     - bugfix - consumer shouldn't cancel its channel during cleanup
 
 - 12.master
