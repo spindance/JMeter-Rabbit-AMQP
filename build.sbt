@@ -4,7 +4,7 @@ organization := "com.spindance"
 
 name := "jmeter-amqp"
 
-version := "12.master"
+version := "13.master"
 
 sbtVersion := "0.13.0"
 
