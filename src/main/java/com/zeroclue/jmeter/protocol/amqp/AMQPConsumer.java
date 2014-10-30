@@ -289,20 +289,6 @@ public class AMQPConsumer extends AMQPSampler implements Interruptible, TestStat
 
     }
 
-    public void cleanup() {
-
-        try {
-            if (consumerTag != null) {
-               channel.basicCancel(consumerTag);
-            }
-        } catch(IOException e) {
-            log.error("Couldn't safely cancel the sample " + consumerTag, e);
-        }
-
-        super.cleanup();
-
-    }
-
     /*
      * Helper method
      */

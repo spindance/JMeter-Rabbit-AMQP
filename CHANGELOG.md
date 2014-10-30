@@ -1,4 +1,7 @@
 ### Changelog ###
+- (next)
+    - bugfix - consumer shouldn't cancel its channel during cleanup
+
 - 12.master
     - use a single thread for the consumer thread pool
 
